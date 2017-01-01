@@ -557,13 +557,10 @@ void AutoCompletion::insertMatchedChars(int character, const MatchedPairConf & m
 	{
 		if (int(matchedPairs[i].first) == character)
 		{
-			if (isCharNextBlank)
-			{
-				char userMatchedChar[2] = { '\0', '\0' };
-				userMatchedChar[0] = matchedPairs[i].second;
-				_pEditView->execute(SCI_INSERTTEXT, caretPos, reinterpret_cast<LPARAM>(userMatchedChar));
-				return;
-			}
+			char userMatchedChar[2] = { '\0', '\0' };
+			userMatchedChar[0] = matchedPairs[i].second;
+			_pEditView->execute(SCI_INSERTTEXT, caretPos, reinterpret_cast<LPARAM>(userMatchedChar));
+			return;
 		}
 	}
 
@@ -577,34 +574,24 @@ void AutoCompletion::insertMatchedChars(int character, const MatchedPairConf & m
 		case int('('):
 			if (matchedPairConf._doParentheses)
 			{
-				if (isCharNextBlank || isInSandwich)
-
-				{
-					matchedChars = ")";
-					_insertedMatchedChars.add(MatchedCharInserted(static_cast<char>(character), caretPos - 1));
-				}
+				matchedChars = ")";
+				_insertedMatchedChars.add(MatchedCharInserted(static_cast<char>(character), caretPos - 1));
 			}
 		break;
 
 		case int('['):
 			if (matchedPairConf._doBrackets)
 			{
-				if (isCharNextBlank || isInSandwich)
-				{
-					matchedChars = "]";
-					_insertedMatchedChars.add(MatchedCharInserted(static_cast<char>(character), caretPos - 1));
-				}
+				matchedChars = "]";
+				_insertedMatchedChars.add(MatchedCharInserted(static_cast<char>(character), caretPos - 1));
 			}
 		break;
 
 		case int('{'):
 			if (matchedPairConf._doCurlyBrackets)
 			{
-				if (isCharNextBlank || isInSandwich)
-				{
-					matchedChars = "}";
-					_insertedMatchedChars.add(MatchedCharInserted(static_cast<char>(character), caretPos - 1));
-				}
+				matchedChars = "}";
+				_insertedMatchedChars.add(MatchedCharInserted(static_cast<char>(character), caretPos - 1));
 			}
 		break;
 
@@ -613,7 +600,7 @@ void AutoCompletion::insertMatchedChars(int character, const MatchedPairConf & m
 			{
 				if (!_insertedMatchedChars.isEmpty())
 				{
-					int pos = _insertedMatchedChars.search('"', static_cast<char>(character), caretPos);
+					int pos = _insertedMatchedChars.search('"', char(character), caretPos);
 					if (pos != -1)
 					{
 						_pEditView->execute(SCI_DELETERANGE, pos, 1);
@@ -622,14 +609,8 @@ void AutoCompletion::insertMatchedChars(int character, const MatchedPairConf & m
 					}
 				}
 
-				if ((isCharPrevBlank && isCharNextBlank) || isInSandwich ||
-					(charPrev == '(' && isCharNextBlank) || (isCharPrevBlank && charNext == ')') ||
-					(charPrev == '[' && isCharNextBlank) || (isCharPrevBlank && charNext == ']') ||
-					(charPrev == '{' && isCharNextBlank) || (isCharPrevBlank && charNext == '}'))
-				{
-					matchedChars = "\"";
-					_insertedMatchedChars.add(MatchedCharInserted(static_cast<char>(character), caretPos - 1));
-				}
+				matchedChars = "\"";
+				_insertedMatchedChars.add(MatchedCharInserted(char(character), caretPos - 1));
 			}
 		break;
 		case int('\''):
@@ -637,7 +618,7 @@ void AutoCompletion::insertMatchedChars(int character, const MatchedPairConf & m
 			{
 				if (!_insertedMatchedChars.isEmpty())
 				{
-					int pos = _insertedMatchedChars.search('\'', static_cast<char>(character), caretPos);
+					int pos = _insertedMatchedChars.search('\'', char(character), caretPos);
 					if (pos != -1)
 					{
 						_pEditView->execute(SCI_DELETERANGE, pos, 1);
@@ -645,15 +626,8 @@ void AutoCompletion::insertMatchedChars(int character, const MatchedPairConf & m
 						return;
 					}
 				}
-
-				if ((isCharPrevBlank && isCharNextBlank) || isInSandwich ||
-					(charPrev == '(' && isCharNextBlank) || (isCharPrevBlank && charNext == ')') ||
-					(charPrev == '[' && isCharNextBlank) || (isCharPrevBlank && charNext == ']') ||
-					(charPrev == '{' && isCharNextBlank) || (isCharPrevBlank && charNext == '}'))
-				{
-					matchedChars = "'";
-					_insertedMatchedChars.add(MatchedCharInserted(static_cast<char>(character), caretPos - 1));
-				}
+				matchedChars = "'";
+				_insertedMatchedChars.add(MatchedCharInserted(char(character), caretPos - 1));
 			}
 		break;
 
