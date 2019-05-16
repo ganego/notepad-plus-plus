@@ -135,7 +135,7 @@ void AutoCompletion::getWordArray(vector<generic_string> & wordArray, TCHAR *beg
 
 	generic_string expr(TEXT("\\<"));
 	expr += beginChars;
-	expr += TEXT("[^ \\t\\n\\r.,;:\"()=<>'+!\\[\\]]+");
+	expr += TEXT("[^ \\t\\n\\r.,;:\"(){}=<>'+!\\[\\]]+");
 
 	int docLength = int(_pEditView->execute(SCI_GETLENGTH));
 
@@ -164,7 +164,7 @@ void AutoCompletion::getWordArray(vector<generic_string> & wordArray, TCHAR *beg
 
 static generic_string addTrailingSlash(generic_string path)
 {
-	if(path.length() >=1 && path[path.length() - 1] == '\\')
+	if (path.length() >=1 && path[path.length() - 1] == '\\')
 		return path;
 	else
 		return path + L"\\";
@@ -172,7 +172,7 @@ static generic_string addTrailingSlash(generic_string path)
 
 static generic_string removeTrailingSlash(generic_string path)
 {
-	if(path.length() >= 1 && path[path.length() - 1] == '\\')
+	if (path.length() >= 1 && path[path.length() - 1] == '\\')
 		return path.substr(0, path.length() - 1);
 	else
 		return path;
@@ -204,13 +204,13 @@ static bool getRawPath(generic_string input, generic_string &rawPath_out)
 	// a quotation mark.
 	locale loc;
 	size_t lastOccurrence = input.rfind(L":");
-	if(lastOccurrence == std::string::npos) // No match.
+	if (lastOccurrence == std::string::npos) // No match.
 		return false;
-	else if(lastOccurrence == 0)
+	else if (lastOccurrence == 0)
 		return false;
-	else if(!std::isalpha(input[lastOccurrence - 1], loc))
+	else if (!std::isalpha(input[lastOccurrence - 1], loc))
 		return false;
-	else if(lastOccurrence >= 2 && !isAllowedBeforeDriveLetter(input[lastOccurrence - 2]))
+	else if (lastOccurrence >= 2 && !isAllowedBeforeDriveLetter(input[lastOccurrence - 2]))
 		return false;
 
 	rawPath_out = input.substr(lastOccurrence - 1);
@@ -220,15 +220,15 @@ static bool getRawPath(generic_string input, generic_string &rawPath_out)
 static bool getPathsForPathCompletion(generic_string input, generic_string &rawPath_out, generic_string &pathToMatch_out)
 {
 	generic_string rawPath;
-	if(! getRawPath(input, rawPath))
+	if (! getRawPath(input, rawPath))
 	{
 		return false;
 	}
-	else if(isFile(rawPath) || isFile(removeTrailingSlash(rawPath)))
+	else if (isFile(rawPath) || isFile(removeTrailingSlash(rawPath)))
 	{
 		return false;
 	}
-	else if(isDirectory(rawPath))
+	else if (isDirectory(rawPath))
 	{
 		rawPath_out = rawPath;
 		pathToMatch_out = rawPath;
@@ -237,7 +237,7 @@ static bool getPathsForPathCompletion(generic_string input, generic_string &rawP
 	else
 	{
 		size_t last_occurrence = rawPath.rfind(L"\\");
-		if(last_occurrence == std::string::npos) // No match.
+		if (last_occurrence == std::string::npos) // No match.
 			return false;
 		else
 		{
@@ -270,7 +270,7 @@ void AutoCompletion::showPathCompletion()
 	   exists, this means we should list all files and directories in C:.
 	*/
 	generic_string rawPath, pathToMatch;
-	if(! getPathsForPathCompletion(currentLine, rawPath, pathToMatch))
+	if (! getPathsForPathCompletion(currentLine, rawPath, pathToMatch))
 		return;
 
 	// Get all files and directories in the path.
@@ -281,7 +281,7 @@ void AutoCompletion::showPathCompletion()
 		generic_string pathToMatchPlusSlash = addTrailingSlash(pathToMatch);
 		generic_string searchString = pathToMatchPlusSlash + TEXT("*.*");
 		hFind = ::FindFirstFile(searchString.c_str(), &data);
-		if(hFind != INVALID_HANDLE_VALUE)
+		if (hFind != INVALID_HANDLE_VALUE)
 		{
 			// Maximum number of entries to show. Without this it appears to the user like N++ hangs when autocompleting
 			// some really large directories (c:\windows\winxsys on my system for instance).
@@ -289,21 +289,21 @@ void AutoCompletion::showPathCompletion()
 			unsigned int counter = 0;
 			do
 			{
-				if(++counter > maxEntries)
+				if (++counter > maxEntries)
 					break;
 
-				if(generic_string(data.cFileName) == TEXT(".") || generic_string(data.cFileName) == TEXT(".."))
+				if (generic_string(data.cFileName) == TEXT(".") || generic_string(data.cFileName) == TEXT(".."))
 					continue;
 
-				if(! autoCompleteEntries.empty())
+				if (! autoCompleteEntries.empty())
 					autoCompleteEntries += TEXT("\n");
 
 				autoCompleteEntries += pathToMatchPlusSlash;
 				autoCompleteEntries += data.cFileName;
-				if(data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) // If directory, add trailing slash.
+				if (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) // If directory, add trailing slash.
 					autoCompleteEntries += TEXT("\\");
 
-			} while(::FindNextFile(hFind, &data));
+			} while (::FindNextFile(hFind, &data));
 			::FindClose(hFind);
 		}
 		else
@@ -342,8 +342,8 @@ bool AutoCompletion::showWordComplete(bool autoInsert)
 
 	if (wordArray.size() == 1 && autoInsert)
 	{
-		_pEditView->replaceTargetRegExMode(wordArray[0].c_str(), startPos, curPos);
-		_pEditView->execute(SCI_GOTOPOS, startPos + wordArray[0].length());
+		int replacedLength = _pEditView->replaceTargetRegExMode(wordArray[0].c_str(), startPos, curPos);
+		_pEditView->execute(SCI_GOTOPOS, startPos + replacedLength);
 		return true;
 	}
 
@@ -430,7 +430,7 @@ void AutoCompletion::getCloseTag(char *closeTag, size_t closeTagSize, size_t car
 	if (isHTML) // for HTML: ignore void elements
 	{
 		// https://www.w3.org/TR/html5/syntax.html#void-elements
-		char *disallowedTags[] = {
+		const char *disallowedTags[] = {
 				"area", "base", "br", "col", "embed", "hr", "img", "input",
 				"keygen", "link", "meta", "param", "source", "track", "wbr",
 				"!doctype"
@@ -542,7 +542,7 @@ void AutoCompletion::insertMatchedChars(int character, const MatchedPairConf & m
 {
 	const vector< pair<char, char> > & matchedPairs = matchedPairConf._matchedPairs;
 	int caretPos = static_cast<int32_t>(_pEditView->execute(SCI_GETCURRENTPOS));
-	char *matchedChars = NULL;
+	const char *matchedChars = NULL;
 
 	char charPrev = static_cast<char>(_pEditView->execute(SCI_GETCHARAT, caretPos - 2));
 	char charNext = static_cast<char>(_pEditView->execute(SCI_GETCHARAT, caretPos));
@@ -557,10 +557,13 @@ void AutoCompletion::insertMatchedChars(int character, const MatchedPairConf & m
 	{
 		if (int(matchedPairs[i].first) == character)
 		{
-			char userMatchedChar[2] = { '\0', '\0' };
-			userMatchedChar[0] = matchedPairs[i].second;
-			_pEditView->execute(SCI_INSERTTEXT, caretPos, reinterpret_cast<LPARAM>(userMatchedChar));
-			return;
+			if (isCharNextBlank)
+			{
+				char userMatchedChar[2] = { '\0', '\0' };
+				userMatchedChar[0] = matchedPairs[i].second;
+				_pEditView->execute(SCI_INSERTTEXT, caretPos, reinterpret_cast<LPARAM>(userMatchedChar));
+				return;
+			}
 		}
 	}
 
@@ -600,7 +603,7 @@ void AutoCompletion::insertMatchedChars(int character, const MatchedPairConf & m
 			{
 				if (!_insertedMatchedChars.isEmpty())
 				{
-					int pos = _insertedMatchedChars.search('"', char(character), caretPos);
+					int pos = _insertedMatchedChars.search('"', static_cast<char>(character), caretPos);
 					if (pos != -1)
 					{
 						_pEditView->execute(SCI_DELETERANGE, pos, 1);
@@ -610,7 +613,7 @@ void AutoCompletion::insertMatchedChars(int character, const MatchedPairConf & m
 				}
 
 				matchedChars = "\"";
-				_insertedMatchedChars.add(MatchedCharInserted(char(character), caretPos - 1));
+				_insertedMatchedChars.add(MatchedCharInserted(static_cast<char>(character), caretPos - 1));
 			}
 		break;
 		case int('\''):
@@ -618,7 +621,7 @@ void AutoCompletion::insertMatchedChars(int character, const MatchedPairConf & m
 			{
 				if (!_insertedMatchedChars.isEmpty())
 				{
-					int pos = _insertedMatchedChars.search('\'', char(character), caretPos);
+					int pos = _insertedMatchedChars.search('\'', static_cast<char>(character), caretPos);
 					if (pos != -1)
 					{
 						_pEditView->execute(SCI_DELETERANGE, pos, 1);
@@ -626,8 +629,9 @@ void AutoCompletion::insertMatchedChars(int character, const MatchedPairConf & m
 						return;
 					}
 				}
+
 				matchedChars = "'";
-				_insertedMatchedChars.add(MatchedCharInserted(char(character), caretPos - 1));
+				_insertedMatchedChars.add(MatchedCharInserted(static_cast<char>(character), caretPos - 1));
 			}
 		break;
 
@@ -723,7 +727,7 @@ void AutoCompletion::update(int character)
 	}
 }
 
-void AutoCompletion::callTipClick(int direction) {
+void AutoCompletion::callTipClick(size_t direction) {
 	if (!_funcCompletionActive)
 		return;
 
@@ -742,12 +746,11 @@ bool AutoCompletion::setLanguage(LangType language) {
 	TCHAR path[MAX_PATH];
 	::GetModuleFileName(NULL, path, MAX_PATH);
 	PathRemoveFileSpec(path);
-	lstrcat(path, TEXT("\\plugins\\APIs\\"));
-	lstrcat(path, getApiFileName());
-	lstrcat(path, TEXT(".xml"));
+	wcscat_s(path, TEXT("\\autoCompletion\\"));
+	wcscat_s(path, getApiFileName());
+	wcscat_s(path, TEXT(".xml"));
 
-	if (_pXmlFile)
-		delete _pXmlFile;
+	delete _pXmlFile;
 
 	_pXmlFile = new TiXmlDocument(path);
 	_funcCompletionActive = _pXmlFile->LoadFile();
@@ -770,7 +773,7 @@ bool AutoCompletion::setLanguage(LangType language) {
 		_funcCompletionActive = true;
 	}
 
-	if(_funcCompletionActive) //try setting up environment
+	if (_funcCompletionActive) //try setting up environment
     {
 		//setup defaults
 		_ignoreCase = true;
